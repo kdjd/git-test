@@ -1,5 +1,7 @@
 package com.kdjd.test;
 
+import java.util.UUID;
+
 public class Test09 {
 
     public static void main(String[] args) {
@@ -16,6 +18,9 @@ public class Test09 {
         System.out.println(idWithTime);
         System.out.println("id:" + i + ",time:" + l);
         System.out.println(parse(idWithTime));
+
+        String upperCase = UUID.randomUUID().toString().toUpperCase();
+        System.out.println(upperCase);
     }
 
     private static long getId(Integer id, Long time) {

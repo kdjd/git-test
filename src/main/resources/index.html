@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML请求调试工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/theme/dracula.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #334155;
+        }
+
+        h1 {
+            color: #60a5fa;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background-color: #1e293b;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-size: 1.4rem;
+            color: #60a5fa;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title i {
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .input-with-icon input {
+            padding-left: 45px;
+        }
+
+        .method-select {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .method-btn {
+            padding: 10px 20px;
+            background-color: #334155;
+            border: none;
+            border-radius: 8px;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .method-btn:hover {
+            background-color: #475569;
+        }
+
+        .method-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .header-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .header-row input {
+            flex: 1;
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            background-color: #475569;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-small:hover {
+            background-color: #64748b;
+        }
+
+        .btn-small.remove {
+            background-color: #dc2626;
+        }
+
+        .btn-small.remove:hover {
+            background-color: #ef4444;
+        }
+
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-primary:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #475569;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #64748b;
+        }
+
+        .editor-container {
+            border: 1px solid #475569;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            flex-grow: 1;
+            min-height: 300px;
+        }
+
+        .editor-toolbar {
+            background-color: #334155;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #475569;
+        }
+
+        .editor-toolbar span {
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .CodeMirror {
+            height: 100%;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .response-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .response-tabs {
+            display: flex;
+            border-bottom: 1px solid #475569;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background-color: transparent;
+            color: #94a3b8;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            color: #e2e8f0;
+        }
+
+        .tab-btn.active {
+            color: #60a5fa;
+            border-bottom-color: #60a5fa;
+        }
+
+        .tab-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        .tab-pane {
+            display: none;
+            height: 100%;
+        }
+
+        .tab-pane.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-code {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status-2xx {
+            background-color: #14532d;
+            color: #86efac;
+        }
+
+        .status-4xx {
+            background-color: #7c2d12;
+            color: #fbbf24;
+        }
+
+        .status-5xx {
+            background-color: #7f1d1d;
+            color: #f87171;
+        }
+
+        .response-info {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #475569;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #3b82f6;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            color: #f87171;
+            padding: 10px;
+            background-color: #7f1d1d;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .success-message {
+            color: #86efac;
+            padding: 10px;
+            background-color: #14532d;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .xml-validation {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .xml-validation.valid {
+            background-color: rgba(22, 163, 74, 0.2);
+            color: #86efac;
+            border: 1px solid rgba(22, 163, 74, 0.5);
+        }
+
+        .xml-validation.invalid {
+            background-color: rgba(220, 38, 38, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(220, 38, 38, 0.5);
+        }
+
+        .xml-template-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .history-panel {
+            grid-column: 1 / -1;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background-color: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .history-item:hover {
+            background-color: #334155;
+        }
+
+        .history-method {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .history-url {
+            color: #cbd5e1;
+            font-family: monospace;
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-time {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .method-get {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .method-post {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .method-put {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .method-delete {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .method-soap {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        .curl-command {
+            background-color: #0f172a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid #475569;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #86efac;
+            font-size: 0.95rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            background-color: #475569;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .copy-btn:hover {
+            background-color: #64748b;
+        }
+
+        .copy-btn.success {
+            background-color: #10b981;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1><i class="fas fa-code"></i> XML请求调试工具</h1>
+        <p class="subtitle">专门用于发送、调试XML格式HTTP请求的工具，支持SOAP、REST XML API</p>
+    </header>
+
+    <div class="main-content">
+        <div class="panel">
+            <h2 class="panel-title"><i class="fas fa-sliders-h"></i> 请求配置</h2>
+
+            <div class="form-group">
+                <label for="url">请求URL</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-link"></i>
+                    <input type="url" id="url" placeholder="http://59.255.21.10:8080/datacenter/services/fxryhsqzxx/post" value="http://59.255.21.10:8080">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>请求方法</label>
+                <div class="method-select">
+                    <button class="method-btn" data-method="GET">GET</button>
+                    <button class="method-btn active" data-method="POST">POST</button>
+                    <button class="method-btn" data-method="PUT">PUT</button>
+                    <button class="method-btn" data-method="DELETE">DELETE</button>
+                    <button class="method-btn" data-method="SOAP">SOAP</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="headers">请求头</label>
+                <div id="headers-container">
+                    <div class="header-row">
+                        <input type="text" class="header-key" placeholder="Header名称" value="Content-Type">
+                        <input type="text" class="header-value" placeholder="Header值" value="application/xml">
+                        <button class="btn-small remove"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="header-row">
+                        <input type="text" class="header-key" placeholder="Header名称" value="Accept">
+                        <input type="text" class="header-value" placeholder="Header值" value="application/xml">
+                        <button class="btn-small remove"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <button id="add-header" class="btn-small"><i class="fas fa-plus"></i> 添加请求头</button>
+            </div>
+
+            <div class="form-group">
+                <label>XML请求体</label>
+                <div class="xml-template-selector">
+                    <select id="xml-template" class="btn-secondary">
+                        <option value="">选择XML模板...</option>
+                        <option value="soap">SOAP请求</option>
+                        <option value="rest">REST XML请求</option>
+                        <option value="rss">RSS/Atom Feed</option>
+                        <option value="custom">自定义</option>
+                    </select>
+                    <button id="format-xml" class="btn-secondary"><i class="fas fa-indent"></i> 格式化XML</button>
+                    <button id="validate-xml" class="btn-secondary"><i class="fas fa-check-circle"></i> 验证XML</button>
+                </div>
+
+                <div class="editor-container">
+                    <div class="editor-toolbar">
+                        <span>XML编辑器</span>
+                        <div class="editor-actions">
+                            <button id="clear-xml" class="btn-small"><i class="fas fa-eraser"></i> 清空</button>
+                        </div>
+                    </div>
+                    <textarea id="xml-body" style="display: none;"><?xml version="1.0" encoding="utf-8" ?>
+                        <REQUEST>
+  <USER>s2i</USER>
+  <PASSWORD>4Y2w</PASSWORD>
+  <CONDITION>
+    <SQJZRYBH>2023021602031</SQJZRYBH>
+    <BHSQZR>高瑞路</BHSQZR>
+    <HSQZSY>守届者短信通知高瑞路越界</HSQZSY>
+    <HSQZR>李伶伶</HSQZR>
+    <HSQZSJ>2023-06-01 00:00:00</HSQZSJ>
+    <HSQZDD>安平司法所</HSQZDD>
+    <HSQKJL>我所收到短信通知高瑞路越界</HSQKJL>
+  </CONDITION>
+</REQUEST></textarea>
+                </div>
+
+                <div id="xml-validation-result" class="xml-validation">
+                    XML语法验证结果将显示在这里
+                </div>
+            </div>
+
+            <button id="send-request" class="btn-primary">
+                <i class="fas fa-paper-plane"></i> 发送XML请求
+            </button>
+
+            <div class="form-group">
+                <label>生成的Curl命令</label>
+                <div class="curl-command" id="curl-command">
+                    curl -X POST "https://httpbin.org/xml" \
+                    -H "Content-Type: application/xml" \
+                    -H "Accept: application/xml" \
+                    -d '<?xml version="1.0" encoding="UTF-8"?>
+                    <root>
+                        <person>
+                            <name>张三</name>
+                            <age>30</age>
+                            <email>zhangsan@example.com</email>
+                        </person>
+                    </root>
+                    '
+                </div>
+                <button id="copy-curl" class="copy-btn"><i class="fas fa-copy"></i> 复制Curl命令</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="response-container">
+                <h2 class="panel-title"><i class="fas fa-reply"></i> 响应结果</h2>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>正在发送XML请求...</p>
+                </div>
+
+                <div id="response-content">
+                    <div class="response-tabs">
+                        <button class="tab-btn active" data-tab="body">响应体</button>
+                        <button class="tab-btn" data-tab="headers">响应头</button>
+                        <button class="tab-btn" data-tab="info">请求信息</button>
+                        <button class="tab-btn" data-tab="raw">原始响应</button>
+                    </div>
+
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="tab-body">
+                            <div class="response-info">
+                                <div class="status-code status-2xx" id="status-code">200 OK</div>
+                                <div id="response-time">响应时间: --</div>
+                                <div id="response-size">响应大小: --</div>
+                            </div>
+                            <div class="editor-container">
+                                <div class="editor-toolbar">
+                                    <span>XML响应</span>
+                                    <div class="editor-actions">
+                                        <button id="format-response" class="btn-small"><i class="fas fa-indent"></i> 格式化
+                                        </button>
+                                        <button id="copy-response" class="btn-small"><i class="fas fa-copy"></i> 复制
+                                        </button>
+                                    </div>
+                                </div>
+                                <textarea id="response-body" style="display: none;">发送请求以查看XML响应...</textarea>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane" id="tab-headers">
+                            <div class="editor-container">
+                                <div class="editor-toolbar">
+                                    <span>响应头</span>
+                                </div>
+                                <textarea id="response-headers"
+                                          style="display: none;">发送请求以查看响应头...</textarea>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane" id="tab-info">
+                            <div class="editor-container">
+                                <div class="editor-toolbar">
+                                    <span>请求信息</span>
+                                </div>
+                                <textarea id="request-info" style="display: none;">发送请求以查看详细信息...</textarea>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane" id="tab-raw">
+                            <div class="editor-container">
+                                <div class="editor-toolbar">
+                                    <span>原始响应</span>
+                                </div>
+                                <textarea id="raw-response" style="display: none;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel history-panel">
+            <h2 class="panel-title"><i class="fas fa-history"></i> XML请求历史</h2>
+            <div class="history-list" id="history-list">
+                <!-- 历史记录将在这里动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>XML请求调试工具 &copy; 2023 | 专门用于测试和调试XML格式HTTP请求的在线工具</p>
+        <p>支持SOAP、REST XML、RSS/Atom等XML格式API测试</p>
+    </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/addon/edit/closebrackets.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 元素引用
+        const urlInput = document.getElementById('url');
+        const methodButtons = document.querySelectorAll('.method-btn');
+        const headersContainer = document.getElementById('headers-container');
+        const addHeaderButton = document.getElementById('add-header');
+        const sendRequestButton = document.getElementById('send-request');
+        const curlCommandElement = document.getElementById('curl-command');
+        const copyCurlButton = document.getElementById('copy-curl');
+        const loadingElement = document.getElementById('loading');
+        const responseContentElement = document.getElementById('response-content');
+        const statusCodeElement = document.getElementById('status-code');
+        const responseTimeElement = document.getElementById('response-time');
+        const responseSizeElement = document.getElementById('response-size');
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const historyListElement = document.getElementById('history-list');
+        const xmlTemplateSelect = document.getElementById('xml-template');
+        const formatXmlButton = document.getElementById('format-xml');
+        const validateXmlButton = document.getElementById('validate-xml');
+        const clearXmlButton = document.getElementById('clear-xml');
+        const xmlValidationResult = document.getElementById('xml-validation-result');
+        const formatResponseButton = document.getElementById('format-response');
+        const copyResponseButton = document.getElementById('copy-response');
+
+        // 当前请求方法
+        let currentMethod = 'POST';
+
+        // 请求历史记录
+        let requestHistory = JSON.parse(localStorage.getItem('xmlDebuggerHistory')) || [];
+
+        // CodeMirror编辑器实例
+        let xmlEditor, responseEditor, headersEditor, infoEditor, rawEditor;
+
+        // 初始化CodeMirror编辑器
+        function initEditors() {
+            // XML请求体编辑器
+            xmlEditor = CodeMirror.fromTextArea(document.getElementById('xml-body'), {
+                mode: 'xml',
+                theme: 'dracula',
+                lineNumbers: true,
+                matchBrackets: true,
+                autoCloseBrackets: true,
+                lineWrapping: true,
+                indentUnit: 2,
+                tabSize: 2
+            });
+
+            // 响应体编辑器
+            responseEditor = CodeMirror.fromTextArea(document.getElementById('response-body'), {
+                mode: 'xml',
+                theme: 'dracula',
+                lineNumbers: true,
+                matchBrackets: true,
+                readOnly: true,
+                lineWrapping: true,
+                indentUnit: 2,
+                tabSize: 2
+            });
+
+            // 响应头编辑器
+            headersEditor = CodeMirror.fromTextArea(document.getElementById('response-headers'), {
+                mode: 'application/json',
+                theme: 'dracula',
+                lineNumbers: true,
+                readOnly: true,
+                lineWrapping: true
+            });
+
+            // 请求信息编辑器
+            infoEditor = CodeMirror.fromTextArea(document.getElementById('request-info'), {
+                mode: 'application/json',
+                theme: 'dracula',
+                lineNumbers: true,
+                readOnly: true,
+                lineWrapping: true
+            });
+
+            // 原始响应编辑器
+            rawEditor = CodeMirror.fromTextArea(document.getElementById('raw-response'), {
+                mode: 'text/plain',
+                theme: 'dracula',
+                lineNumbers: true,
+                readOnly: true,
+                lineWrapping: true
+            });
+
+            // 设置编辑器高度
+            setTimeout(() => {
+                const editors = document.querySelectorAll('.CodeMirror');
+                editors.forEach(editor => {
+                    editor.style.height = '300px';
+                });
+            }, 100);
+        }
+
+        // 初始化
+        initEditors();
+        renderHistory();
+
+        // 设置方法按钮事件
+        methodButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                methodButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                currentMethod = this.dataset.method;
+
+                // 如果选择SOAP方法，自动设置SOAP相关头部
+                if (currentMethod === 'SOAP') {
+                    updateHeadersForSOAP();
+                }
+
+                updateCurlCommand();
+            });
+        });
+
+        // 添加请求头行
+        addHeaderButton.addEventListener('click', function () {
+            addHeaderRow('', '');
+        });
+
+        // 删除请求头行
+        headersContainer.addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove') || e.target.parentElement.classList.contains('remove')) {
+                const row = e.target.closest('.header-row');
+                if (headersContainer.children.length > 1) {
+                    row.remove();
+                    updateCurlCommand();
+                }
+            }
+        });
+
+        // 更新请求头输入
+        headersContainer.addEventListener('input', function () {
+            updateCurlCommand();
+        });
+
+        // 更新URL
+        urlInput.addEventListener('input', updateCurlCommand);
+
+        // XML编辑器内容变化时更新curl命令
+        xmlEditor.on('change', function () {
+            updateCurlCommand();
+            validateXML(xmlEditor.getValue());
+        });
+
+        // 发送请求
+        sendRequestButton.addEventListener('click', sendRequest);
+
+        // 复制curl命令
+        copyCurlButton.addEventListener('click', function () {
+            copyToClipboard(curlCommandElement.textContent);
+            showButtonSuccess(this, '已复制');
+        });
+
+        // 复制响应内容
+        copyResponseButton.addEventListener('click', function () {
+            copyToClipboard(responseEditor.getValue());
+            showButtonSuccess(this, '已复制');
+        });
+
+        // 格式化XML
+        formatXmlButton.addEventListener('click', function () {
+            formatXML(xmlEditor);
+        });
+
+        // 格式化响应XML
+        formatResponseButton.addEventListener('click', function () {
+            formatXML(responseEditor);
+        });
+
+        // 验证XML
+        validateXmlButton.addEventListener('click', function () {
+            validateXML(xmlEditor.getValue());
+        });
+
+        // 清空XML编辑器
+        clearXmlButton.addEventListener('click', function () {
+            xmlEditor.setValue('');
+            xmlValidationResult.textContent = 'XML已清空';
+            xmlValidationResult.className = 'xml-validation';
+        });
+
+        // XML模板选择
+        xmlTemplateSelect.addEventListener('change', function () {
+            const template = this.value;
+            if (template) {
+                loadXMLTemplate(template);
+            }
+        });
+
+        // 标签页切换
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const tabId = this.dataset.tab;
+
+                // 更新活动标签
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+
+                // 显示对应内容
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('active');
+                });
+                document.getElementById(`tab-${tabId}`).classList.add('active');
+            });
+        });
+
+        // 初始化curl命令
+        updateCurlCommand();
+        validateXML(xmlEditor.getValue());
+
+        // 功能函数
+        function addHeaderRow(key, value) {
+            const row = document.createElement('div');
+            row.className = 'header-row';
+            row.innerHTML = `
+                    <input type="text" class="header-key" placeholder="Header名称" value="${key}">
+                    <input type="text" class="header-value" placeholder="Header值" value="${value}">
+                    <button class="btn-small remove"><i class="fas fa-trash"></i></button>
+                `;
+            headersContainer.appendChild(row);
+            updateCurlCommand();
+        }
+
+        function updateHeadersForSOAP() {
+            // 清空现有头部
+            const rows = headersContainer.querySelectorAll('.header-row');
+            rows.forEach(row => row.remove());
+
+            // 添加SOAP特定头部
+            addHeaderRow('Content-Type', 'text/xml; charset=utf-8');
+            addHeaderRow('SOAPAction', '');
+            addHeaderRow('Accept', 'text/xml');
+
+            // 更新XML模板为SOAP
+            loadXMLTemplate('soap');
+        }
+
+        function updateCurlCommand() {
+            const url = urlInput.value.trim();
+            const headers = getHeaders();
+            const xmlBody = xmlEditor.getValue().trim();
+
+            let curl = `curl -X ${currentMethod} "${url}"`;
+
+            // 添加请求头
+            headers.forEach(header => {
+                if (header.key && header.value) {
+                    curl += ` \\\n  -H "${header.key}: ${header.value}"`;
+                }
+            });
+
+            // 添加XML请求体
+            if (['POST', 'PUT', 'DELETE', 'SOAP'].includes(currentMethod) && xmlBody) {
+                // 对XML中的单引号进行转义
+                const escapedBody = xmlBody.replace(/'/g, "'\\''");
+                curl += ` \\\n  -d '${escapedBody}'`;
+            }
+
+            curlCommandElement.textContent = curl;
+        }
+
+        function getHeaders() {
+            const headers = [];
+            const rows = headersContainer.querySelectorAll('.header-row');
+
+            rows.forEach(row => {
+                const key = row.querySelector('.header-key').value.trim();
+                const value = row.querySelector('.header-value').value.trim();
+
+                if (key || value) {
+                    headers.push({key, value});
+                }
+            });
+
+            return headers;
+        }
+
+        async function sendRequest() {
+            let url = urlInput.value.trim();
+            if (!url.startsWith('http://59.255.21.10:8080')) {
+                if (url.startsWith("/")) {
+                    url = 'http://59.255.21.10:8080' + url;
+                } else {
+                    url = 'http://59.255.21.10:8080' + '/' + url;
+                }
+            }
+            console.log(url);
+            const method = currentMethod === 'SOAP' ? 'POST' : currentMethod;
+            const headers = getHeaders().reduce((acc, header) => {
+                if (header.key && header.value) {
+                    acc[header.key] = header.value;
+                }
+                return acc;
+            }, {});
+
+            const xmlBody = xmlEditor.getValue().trim();
+
+            // 验证URL
+            if (!url) {
+                showError('请输入请求URL');
+                return;
+            }
+
+            // 验证XML（非必须，但可以提醒用户）
+            if (['POST', 'PUT', 'DELETE', 'SOAP'].includes(currentMethod)) {
+                const validation = validateXML(xmlBody, true);
+                if (!validation.isValid) {
+                    if (!confirm(`XML可能存在问题：${validation.error}\n是否继续发送请求？`)) {
+                        return;
+                    }
+                }
+            }
+
+            // 显示加载状态
+            loadingElement.classList.add('active');
+            responseContentElement.style.opacity = '0.5';
+            sendRequestButton.disabled = true;
+
+            // 记录请求开始时间
+            const startTime = Date.now();
+
+            try {
+                const options = {
+                    method: method,
+                    headers: headers
+                };
+
+                if (xmlBody && ['POST', 'PUT', 'DELETE'].includes(method)) {
+                    options.body = xmlBody;
+                }
+
+                const response = await fetch(url, options);
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                // 获取响应头
+                const responseHeaders = {};
+                response.headers.forEach((value, key) => {
+                    responseHeaders[key] = value;
+                });
+
+                // 获取响应体
+                const responseText = await response.text();
+                const responseSize = new Blob([responseText]).size;
+
+                // 显示响应
+                displayResponse(response, responseText, responseHeaders, responseTime, responseSize);
+
+                // 添加到历史记录
+                addToHistory({
+                    url,
+                    method: currentMethod,
+                    headers,
+                    xmlBody,
+                    timestamp: new Date().toISOString(),
+                    status: response.status,
+                    statusText: response.statusText,
+                    responseTime,
+                    responseSize
+                });
+
+            } catch (error) {
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                showError(`请求失败: ${error.message}`);
+
+                // 显示错误信息
+                statusCodeElement.textContent = 'Error';
+                statusCodeElement.className = 'status-code status-5xx';
+                responseTimeElement.textContent = `响应时间: ${responseTime}ms`;
+                responseSizeElement.textContent = `响应大小: 0 bytes`;
+                responseEditor.setValue(`请求错误：${error.message}`);
+                responseEditor.setOption('mode', 'text/plain');
+
+                // 添加到历史记录（失败的情况）
+                addToHistory({
+                    url,
+                    method: currentMethod,
+                    headers,
+                    xmlBody,
+                    timestamp: new Date().toISOString(),
+                    status: 0,
+                    statusText: 'Error',
+                    responseTime,
+                    error: error.message
+                });
+            } finally {
+                // 隐藏加载状态
+                loadingElement.classList.remove('active');
+                responseContentElement.style.opacity = '1';
+                sendRequestButton.disabled = false;
+            }
+        }
+
+        function displayResponse(response, responseText, responseHeaders, responseTime, responseSize) {
+            // 更新状态码
+            statusCodeElement.textContent = `${response.status} ${response.statusText}`;
+
+            if (response.status >= 200 && response.status.status < 300) {
+                statusCodeElement.className = 'status-code status-2xx';
+            } else if (response.status >= 400 && response.status < 500) {
+                statusCodeElement.className = 'status-code status-4xx';
+            } else {
+                statusCodeElement.className = 'status-code status-5xx';
+            }
+
+            // 更新响应时间和大小
+            responseTimeElement.textContent = `响应时间: ${responseTime}ms`;
+            responseSizeElement.textContent = `响应大小: ${formatBytes(responseSize)}`;
+
+            // 检测响应内容类型并设置编辑器模式
+            const contentType = response.headers.get('content-type') || '';
+            let responseMode = 'text/plain';
+
+            if (contentType.includes('xml')) {
+                responseMode = 'xml';
+                // 尝试格式化XML
+                try {
+                    const formatted = formatXMLString(responseText);
+                    responseEditor.setValue(formatted);
+                } catch (e) {
+                    responseEditor.setValue(responseText);
+                }
+            } else if (contentType.includes('json')) {
+                responseMode = 'application/json';
+                try {
+                    const json = JSON.parse(responseText);
+                    responseEditor.setValue(JSON.stringify(json, null, 2));
+                } catch (e) {
+                    responseEditor.setValue(responseText);
+                }
+            } else {
+                responseEditor.setValue(responseText);
+            }
+
+            responseEditor.setOption('mode', responseMode);
+
+            // 更新响应头
+            headersEditor.setValue(JSON.stringify(responseHeaders, null, 2));
+
+            // 更新请求信息
+            const requestInfo = {
+                url: urlInput.value,
+                method: currentMethod,
+                headers: getHeaders(),
+                requestSize: xmlEditor.getValue().trim().length,
+                time: new Date().toLocaleString(),
+                responseTime: `${responseTime}ms`,
+                responseSize: `${formatBytes(responseSize)}`
+            };
+
+            infoEditor.setValue(JSON.stringify(requestInfo, null, 2));
+
+            // 更新原始响应
+            rawEditor.setValue(responseText);
+
+            // 确保响应体标签页是活动的
+            document.querySelector('.tab-btn[data-tab="body"]').click();
+        }
+
+        function showError(message) {
+            // 创建错误消息元素
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+
+            // 插入到响应区域顶部
+            const responseContainer = document.querySelector('.response-container');
+            responseContainer.insertBefore(errorElement, responseContainer.firstChild);
+
+            // 3秒后移除错误消息
+            setTimeout(() => {
+                errorElement.remove();
+            }, 3000);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('复制成功');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            });
+        }
+
+        function showButtonSuccess(button, message) {
+            const originalHTML = button.innerHTML;
+            button.classList.add('success');
+            button.innerHTML = `<i class="fas fa-check"></i> ${message}`;
+
+            setTimeout(() => {
+                button.classList.remove('success');
+                button.innerHTML = originalHTML;
+            }, 2000);
+        }
+
+        function validateXML(xmlString, silent = false) {
+            if (!xmlString.trim()) {
+                if (!silent) {
+                    xmlValidationResult.textContent = 'XML内容为空';
+                    xmlValidationResult.className = 'xml-validation';
+                }
+                return {isValid: true, error: null};
+            }
+
+            try {
+                // 尝试解析XML
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlString, 'application/xml');
+
+                // 检查是否有解析错误
+                const parseError = xmlDoc.getElementsByTagName('parsererror');
+                if (parseError.length > 0) {
+                    const errorText = parseError[0].textContent;
+                    if (!silent) {
+                        xmlValidationResult.textContent = `XML解析错误: ${errorText.substring(0, 100)}...`;
+                        xmlValidationResult.className = 'xml-validation invalid';
+                    }
+                    return {isValid: false, error: errorText};
+                } else {
+                    if (!silent) {
+                        xmlValidationResult.textContent = 'XML语法正确';
+                        xmlValidationResult.className = 'xml-validation valid';
+                    }
+                    return {isValid: true, error: null};
+                }
+            } catch (error) {
+                if (!silent) {
+                    xmlValidationResult.textContent = `XML验证异常: ${error.message}`;
+                    xmlValidationResult.className = 'xml-validation invalid';
+                }
+                return {isValid: false, error: error.message};
+            }
+        }
+
+        function formatXML(editor) {
+            try {
+                const xmlString = editor.getValue();
+                const formatted = formatXMLString(xmlString);
+                editor.setValue(formatted);
+
+                // 如果是请求XML编辑器，显示成功消息
+                if (editor === xmlEditor) {
+                    xmlValidationResult.textContent = 'XML格式化成功';
+                    xmlValidationResult.className = 'xml-validation valid';
+                }
+            } catch (error) {
+                // 如果是请求XML编辑器，显示错误消息
+                if (editor === xmlEditor) {
+                    xmlValidationResult.textContent = `格式化失败: ${error.message}`;
+                    xmlValidationResult.className = 'xml-validation invalid';
+                }
+            }
+        }
+
+        function formatXMLString(xmlString) {
+            // 简单的XML格式化函数
+            let formatted = '';
+            let indent = '';
+            const tab = '  ';
+
+            // 移除现有格式
+            xmlString = xmlString.replace(/(>)(<)(\/*)/g, '$1\n$2$3');
+
+            // 分割为行
+            const lines = xmlString.split('\n');
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+
+                // 减少缩进级别
+                if (line.match(/^<\/\w/)) {
+                    indent = indent.substring(tab.length);
+                }
+
+                formatted += indent + line + '\n';
+
+                // 增加缩进级别
+                if (line.match(/^<?\w[^>]*[^/]>*$/)) {
+                    indent += tab;
+                }
+            }
+
+            return formatted.trim();
+        }
+
+        function loadXMLTemplate(templateName) {
+            let xmlContent = '';
+
+            switch (templateName) {
+                case 'soap':
+                    xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:example="http://www.example.com/">
+  <soap:Header>
+    <!-- SOAP头部信息 -->
+  </soap:Header>
+  <soap:Body>
+    <example:GetUserRequest>
+      <example:UserId>12345</example:UserId>
+    </example:GetUserRequest>
+  </soap:Body>
+</soap:Envelope>`;
+                    break;
+
+                case 'rest':
+                    xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<userRequest>
+  <action>create</action>
+  <user>
+    <name>李四</name>
+    <email>lisi@example.com</email>
+    <age>28</age>
+    <roles>
+      <role>user</role>
+      <role>editor</role>
+    </roles>
+  </user>
+</userRequest>`;
+                    break;
+
+                case 'rss':
+                    xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>示例RSS频道</title>
+    <link>https://example.com</link>
+    <description>这是一个示例RSS频道</description>
+    <item>
+      <title>示例文章标题</title>
+      <link>https://example.com/article/1</link>
+      <description>这是示例文章的摘要内容</description>
+      <pubDate>Mon, 01 Jan 2023 12:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>`;
+                    break;
+
+                default:
+                    xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <!-- 在此处编辑您的XML内容 -->
+</root>`;
+            }
+
+            xmlEditor.setValue(xmlContent);
+            validateXML(xmlContent);
+            updateCurlCommand();
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 bytes';
+            const k = 1024;
+            const sizes = ['bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function addToHistory(request) {
+            // 添加到历史记录数组
+            requestHistory.unshift(request);
+
+            // 限制历史记录数量
+            if (requestHistory.length > 10) {
+                requestHistory = requestHistory.slice(0, 10);
+            }
+
+            // 保存到本地存储
+            localStorage.setItem('xmlDebuggerHistory', JSON.stringify(requestHistory));
+
+            // 重新渲染历史记录
+            renderHistory();
+        }
+
+        function renderHistory() {
+            historyListElement.innerHTML = '';
+
+            if (requestHistory.length === 0) {
+                historyListElement.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">暂无历史记录</div>';
+                return;
+            }
+
+            requestHistory.forEach((request, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+
+                const time = new Date(request.timestamp).toLocaleTimeString();
+                const date = new Date(request.timestamp).toLocaleDateString();
+
+                historyItem.innerHTML = `
+                        <div>
+                            <span class="history-method method-${request.method.toLowerCase()}">${request.method}</span>
+                            <span class="history-url">${request.url}</span>
+                        </div>
+                        <div class="history-time">${date} ${time} | 状态: ${request.status || 'Error'} | 大小: ${request.responseSize ? formatBytes(request.responseSize) : '--'}</div>
+                    `;
+
+                // 点击历史记录项可以重新加载请求
+                historyItem.addEventListener('click', () => {
+                    loadRequestFromHistory(request);
+                });
+
+                historyListElement.appendChild(historyItem);
+            });
+        }
+
+        function loadRequestFromHistory(request) {
+            // 更新URL
+            urlInput.value = request.url;
+
+            // 更新方法
+            methodButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.method === request.method) {
+                    btn.classList.add('active');
+                    currentMethod = request.method;
+                }
+            });
+
+            // 更新请求头
+            headersContainer.innerHTML = '';
+
+            if (request.headers && Object.keys(request.headers).length > 0) {
+                Object.entries(request.headers).forEach(([key, value]) => {
+                    addHeaderRow(key, value);
+                });
+            } else {
+                addHeaderRow('Content-Type', 'application/xml');
+                addHeaderRow('Accept', 'application/xml');
+            }
+
+            // 更新XML请求体
+            if (request.xmlBody) {
+                xmlEditor.setValue(request.xmlBody);
+            }
+
+            // 更新curl命令
+            updateCurlCommand();
+
+            // 显示成功消息
+            const successElement = document.createElement('div');
+            successElement.className = 'success-message';
+            successElement.innerHTML = `<i class="fas fa-check-circle"></i> 已加载历史请求`;
+
+            // 插入到请求配置区域顶部
+            const requestPanel = document.querySelector('.panel:first-child');
+            requestPanel.insertBefore(successElement, requestPanel.firstChild);
+
+            // 3秒后移除消息
+            setTimeout(() => {
+                successElement.remove();
+            }, 3000);
+        }
+
+        // 示例：添加一个初始历史记录
+        if (requestHistory.length === 0) {
+            addToHistory({
+                url: 'https://httpbin.org/xml',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/xml',
+                    'Accept': 'application/xml'
+                },
+                xmlBody: xmlEditor.getValue(),
+                timestamp: new Date().toISOString(),
+                status: 200,
+                statusText: 'OK',
+                responseTime: 123,
+                responseSize: 1024
+            });
+        }
+    });
+</script>
+</body>
+</html>

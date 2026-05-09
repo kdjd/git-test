@@ -1,5 +1,7 @@
 package com.kdjd.test;
 
+import com.kdjd.json.User;
+
 import javax.activation.MimetypesFileTypeMap;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -7,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
+import java.util.concurrent.Callable;
 
 public class A {
 
